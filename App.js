@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 
-const API_KEY = 'ed096c7689a2dc5ed26fbcf37968a610';
+const API_KEY = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
 
 export default function App() {
   const [temperature, setTemperature] = useState(null);

@@ -81,3 +81,41 @@ export const formatDate = (date) => {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}.${month}.${day}`;
 };
+
+export const processHourlyData = (list) => {
+  const now = new Date();
+  const todayDate = now.getDate();
+  
+  // 내일 날짜 구하기
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrowDate = tomorrow.getDate();
+
+  const result = [];
+  
+  for (let item of list) {
+    const date = new Date(item.dt * 1000);
+    const itemDate = date.getDate();
+    
+    // 🌟 오늘이거나 내일인 경우만 가져옴 (모레 데이터는 버림)
+    if (itemDate === todayDate || itemDate === tomorrowDate) {
+      let hours = date.getHours();
+      const ampm = hours >= 12 ? '오후' : '오전';
+      const displayHours = hours % 12 === 0 ? 12 : hours % 12;
+      
+      let timeString = `${ampm} ${displayHours}시`;
+      if (hours === 0) timeString = '자정';
+
+      const isTomorrow = itemDate === tomorrowDate;
+
+      result.push({
+        id: item.dt.toString(),
+        time: timeString,
+        temp: item.main.temp,
+        icon: item.weather[0].icon,
+        isTomorrow: isTomorrow, // 내일인지 여부
+        isMidnight: hours === 0 // 자정인지 여부
+      });
+    }
+  }
+  return result;
+};

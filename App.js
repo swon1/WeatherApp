@@ -3,23 +3,26 @@ import { StyleSheet, Text, View, SafeAreaView, StatusBar, ActivityIndicator, Scr
 import * as Location from 'expo-location';
 
 import WeatherHero from './src/components/WeatherHero';
+import TodayGraph from './src/components/TodayGraph'; // 🌟 1. 새 그래프 컴포넌트 불러오기
 import WeatherDetails from './src/components/WeatherDetails';
 import OutfitCard from './src/components/OutfitCard';
 import ForecastSection from './src/components/ForecastSection';
-import { getAqiKorean, processForecastData } from './src/utils/weatherUtils';
+import { getAqiKorean, processForecastData, processHourlyData } from './src/utils/weatherUtils'; // 🌟 2. 새 함수 불러오기
 
 const API_KEY = process.env.EXPO_PUBLIC_WEATHER_API_KEY;
 
 export default function App() {
   const [weatherData, setWeatherData] = useState({
     temperature: null, tempMin: null, tempMax: null, weatherIcon: null, weatherDesc: null, windSpeed: null,
-    feelsLike: null // 🌟 체감 온도 상태 추가
+    feelsLike: null,
+    humidity: null // 🌟 습도 상태 추가
   });
   const [airData, setAirData] = useState({ airQuality: null, aqiLevel: null });
   const [forecast, setForecast] = useState([]);
+  const [hourlyData, setHourlyData] = useState([]); // 🌟 시간대별 데이터 상태 추가
+  
   const [locationName, setLocationName] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
-  
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [displayMessage, setDisplayMessage] = useState('날씨 정보를 준비하고 있어요...');
@@ -35,7 +38,6 @@ export default function App() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') throw new Error('Permission denied');
       
-      setDisplayMessage('오늘의 날씨를 예쁘게 그리고 있어요...');
       const location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
 
@@ -79,19 +81,19 @@ export default function App() {
         });
 
         setWeatherData({
-          temperature: weatherJson.main.temp, 
-          tempMin: calcMin, 
-          tempMax: calcMax,
-          weatherIcon: weatherJson.weather[0].icon, 
-          weatherDesc: weatherJson.weather[0].description,
-          windSpeed: weatherJson.wind.speed,
-          feelsLike: weatherJson.main.feels_like // 🌟 체감 온도 데이터 저장
+          temperature: weatherJson.main.temp, tempMin: calcMin, tempMax: calcMax,
+          weatherIcon: weatherJson.weather[0].icon, weatherDesc: weatherJson.weather[0].description,
+          windSpeed: weatherJson.wind.speed, feelsLike: weatherJson.main.feels_like,
+          humidity: weatherJson.main.humidity // 🌟 습도 데이터 추출
         });
+        
         setAirData({
-          aqiLevel: airJson.list[0].main.aqi,
-          airQuality: getAqiKorean(airJson.list[0].main.aqi)
+          aqiLevel: airJson.list[0].main.aqi, airQuality: getAqiKorean(airJson.list[0].main.aqi)
         });
+        
         setForecast(processForecastData(forecastJson.list));
+        setHourlyData(processHourlyData(forecastJson.list)); // 🌟 시간대별 데이터 추출 및 세팅
+        
         setHasError(false);
       } else throw new Error('API Error');
     } catch (error) {
@@ -129,11 +131,14 @@ export default function App() {
             <WeatherHero 
               locationName={locationName} currentTime={currentTime} weatherDesc={weatherData.weatherDesc}
               weatherIcon={weatherData.weatherIcon} temperature={weatherData.temperature} 
-              tempMax={weatherData.tempMax} tempMin={weatherData.tempMin} 
-              feelsLike={weatherData.feelsLike} // 🌟 체감 온도 Prop 전달
+              tempMax={weatherData.tempMax} tempMin={weatherData.tempMin} feelsLike={weatherData.feelsLike}
             />
             
-            <WeatherDetails airQuality={airData.airQuality} windSpeed={weatherData.windSpeed} />
+            {/* 🌟 3. 요청하신 위치(메인 카드와 디테일 사이)에 그래프 배치! */}
+            <TodayGraph hourlyData={hourlyData} />
+            
+            {/* 🌟 4. 습도가 포함된 디테일 카드 */}
+            <WeatherDetails airQuality={airData.airQuality} humidity={weatherData.humidity} windSpeed={weatherData.windSpeed} />
             
             <OutfitCard 
               tempMin={weatherData.tempMin} tempMax={weatherData.tempMax} 

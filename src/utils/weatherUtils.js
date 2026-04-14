@@ -12,14 +12,26 @@ export const getAqiKorean = (aqi) => {
 };
 
 const getClothesString = (temp) => {
-  if (temp >= 28) return '민소매나 얇은 반팔';
+  if (temp >= 28) return '시원한 린넨 셔츠나 반팔';
   if (temp >= 23) return '가벼운 반팔이나 얇은 셔츠';
-  if (temp >= 20) return '얇은 긴팔이나 맨투맨';
-  if (temp >= 17) return '얇은 니트나 가디건';
-  if (temp >= 12) return '도톰한 자켓이나 가디건';
-  if (temp >= 9) return '트렌치코트나 야상';
-  if (temp >= 5) return '따뜻한 코트나 가죽자켓';
-  return '두꺼운 패딩과 목도리';
+  if (temp >= 20) return '편안한 맨투맨이나 얇은 긴팔';
+  if (temp >= 17) return '부드러운 니트나 가디건';
+  if (temp >= 12) return '도톰한 자켓이나 포근한 후드티';
+  if (temp >= 9) return '멋스러운 트렌치코트나 야상';
+  if (temp >= 5) return '따뜻한 코트나 든든한 경량 패딩';
+  return '두꺼운 패딩과 따뜻한 목도리';
+};
+
+// 🌟 1. 온도별 의류 아이콘(이모지)을 배열로 반환하는 함수 새로 추가
+const getClothesIcons = (temp) => {
+  if (temp >= 28) return ['🎽', '🩳']; // 민소매, 반바지
+  if (temp >= 23) return ['👕', '👖']; // 반팔, 얇은 바지
+  if (temp >= 20) return ['👕', '👖']; // 긴팔/맨투맨
+  if (temp >= 17) return ['🧶', '👖']; // 니트/가디건
+  if (temp >= 12) return ['🧥', '👖']; // 자켓
+  if (temp >= 9) return ['🧥', '🧣']; // 트렌치코트, 목도리
+  if (temp >= 5) return ['🧥', '🧤']; // 코트, 장갑
+  return ['🧥', '🧣', '🧤']; // 두꺼운 패딩, 목도리, 장갑
 };
 
 export const getOutfitRecommendation = (min, max, wind, aqi) => {
@@ -27,17 +39,29 @@ export const getOutfitRecommendation = (min, max, wind, aqi) => {
   let tips = [];
   const tempDiff = max - min;
 
-  if (tempDiff >= 8) {
-    outfit = `낮에는 [${getClothesString(max)}], 아침저녁엔 [${getClothesString(min)}] 어때요?`;
-    tips.push('일교차가 커요! 입고 벗기 편한 겉옷을 챙겨 체온을 조절하세요 🧥');
+  if (tempDiff >= 10) {
+    outfit = `일교차가 꽤 커요! 한낮엔 ${getClothesString(max)} 차림이 편하시겠지만, 아침저녁을 대비해 ${getClothesString(min)}도 꼭 하나 챙겨서 외출하세요. 🧥`;
+  } else if (tempDiff >= 6) {
+    outfit = `아침저녁으론 제법 선선하네요. ${getClothesString(max)} 차림에 입고 벗기 편한 ${getClothesString(min)} 정도만 걸쳐주시면 하루 종일 기분 좋게 보내실 수 있어요. 🌤️`;
   } else {
-    outfit = `오늘은 하루 종일 [${getClothesString(max)}] 위주의 옷차림을 추천해요.`;
+    outfit = `오늘은 하루 종일 기온이 한결같아요. 고민할 것 없이 ${getClothesString(max)} 위주로 코디하시면 딱 어울리는 하루가 될 거예요. ✨`;
   }
 
-  if (wind >= 5) tips.push('바람이 제법 불어요. 체감 온도가 낮으니 참고하세요 🌬️');
-  if (aqi >= 4) tips.push('미세먼지가 탁해요. 외출 시 마스크를 꼭 챙기세요 😷');
+  if (wind >= 5) tips.push('앗, 바람이 제법 불어서 실제 기온보다 더 쌀쌀하게 느껴져요. 바람을 막아줄 겉옷 챙기는 걸 추천해요! 🌬️');
+  if (aqi >= 4) tips.push('오늘 공기가 탁해서 목이 칼칼할 수 있어요. 소중한 건강을 위해 마스크 챙기는 거 잊지 마세요! 😷');
 
-  return { outfit, tips };
+  // 🌟 최고 기온에 맞는 기본 옷 아이콘 추출
+  let icons = getClothesIcons(max);
+  
+  // 일교차가 6도 이상 크면 최저 기온에 맞는 겉옷 아이콘도 추가 
+  if (tempDiff >= 6) {
+    const minIcons = getClothesIcons(min);
+    // 중복되는 아이콘(예: 바지)을 제거하고 합치기 (Set 활용)
+    icons = [...new Set([...icons, ...minIcons])];
+  }
+
+  // 🌟 문자열뿐만 아니라 icons 배열도 함께 반환
+  return { outfit, tips, icons };
 };
 
 export const processForecastData = (list) => {
